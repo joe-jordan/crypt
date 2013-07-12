@@ -269,7 +269,7 @@ void c_md5(uchar* msg, long int initial_len, unsigned char* digest) {
   
   /* copy the final values back into the byte array: */
   int_to_bytes(A, digest);
-  int_to_bytes(A, digest + 4);
-  int_to_bytes(A, digest + 8);
-  int_to_bytes(A, digest + 12);
+  int_to_bytes(B, digest + 4);
+  int_to_bytes(C, digest + 8);
+  int_to_bytes(D, digest + 12);
 }

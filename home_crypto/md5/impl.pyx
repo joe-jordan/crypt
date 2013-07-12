@@ -27,7 +27,7 @@ def md5(input):
     
     ilen = len(py_byte_input)
     
-    reference_md5(<unsigned char*>unpadded_input, ilen, result)
+    c_md5(<unsigned char*>unpadded_input, ilen, result)
     
     return ''.join(['%x' % result[i] for i in range(16)])
     
