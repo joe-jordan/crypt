@@ -69,7 +69,19 @@ void reference_md5(uint8_t *initial_msg, size_t initial_len, uint8_t *digest) {
     h1 = 0xefcdab89;
     h2 = 0x98badcfe;
     h3 = 0x10325476;
- 
+
+#ifdef DEBUG
+    to_bytes(h0, digest);
+    to_bytes(h1, digest + 4);
+    to_bytes(h2, digest + 8);
+    to_bytes(h3, digest + 12);
+  printf("DEBUG: zeroth digest as hex stream:\n");
+  for (i = 0; i < 16; i++) {
+      printf("%02x", digest[i]);
+  }
+  printf("\n");
+#endif
+
     //Pre-processing:
     //append "1" bit to message    
     //append "0" bits until message length in bits ≡ 448 (mod 512)
@@ -131,9 +143,44 @@ void reference_md5(uint8_t *initial_msg, size_t initial_len, uint8_t *digest) {
             temp = d;
             d = c;
             c = b;
+#ifdef DEBUG
+uint32_t pre_lshift_tmp = a + f + k[i] + w[g];
+if (i == 0)
+  printf("value to lshift: A=%u, F=%u, X[0]=%u, T[0]=%u.\n", a, f, w[0], k[0]);
+#endif
             b = b + LEFTROTATE((a + f + k[i] + w[g]), r[i]);
             a = temp;
- 
+
+#ifdef DEBUG
+int j;
+            if (i == 0) {
+
+    to_bytes(b, digest);
+    to_bytes(c, digest + 4);
+    to_bytes(d, digest + 8);
+    to_bytes(a, digest + 12);
+  printf("DEBUG: after FIRST bracket, digest as hex stream:\n");
+  for (j = 0; j < 16; j++) {
+      printf("%02x", digest[j]);
+  }
+  printf("\n");
+  
+  printf("intermediate values: F()=%u, and macro_temp=%u\n", f, pre_lshift_tmp);
+}
+            if ((i+1) % 16 == 0) {
+    to_bytes(a, digest);
+    to_bytes(b, digest + 4);
+    to_bytes(c, digest + 8);
+    to_bytes(d, digest + 12);
+  printf("DEBUG: after bracket %is, digest as hex stream:\n", (i+1) / 16);
+  for (j = 0; j < 16; j++) {
+      printf("%02x", digest[j]);
+  }
+  printf("\n");
+}
+#endif
+
+
         }
  
         // Add this chunk's hash to result so far:
@@ -141,6 +188,18 @@ void reference_md5(uint8_t *initial_msg, size_t initial_len, uint8_t *digest) {
         h1 += b;
         h2 += c;
         h3 += d;
+ 
+#ifdef DEBUG
+    to_bytes(h0, digest);
+    to_bytes(h1, digest + 4);
+    to_bytes(h2, digest + 8);
+    to_bytes(h3, digest + 12);
+  printf("DEBUG: %dth digest as hex stream:\n", offset / 64);
+  for (i = 0; i < 16; i++) {
+      printf("%02x", digest[i]);
+  }
+  printf("\n");
+#endif
  
     }
  

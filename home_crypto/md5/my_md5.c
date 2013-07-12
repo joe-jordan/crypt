@@ -46,23 +46,23 @@ THE SOFTWARE.
 
 /* MD5 defines some chewing functions: */
 
-#define F(X, Y, Z) X & Y | ~X & Z
-#define G(X, Y, Z) X & Z | Y & ~Z
+#define F(X, Y, Z) (X & Y) | ((~X) & Z)
+#define G(X, Y, Z) (X & Z) | (Y & (~Z))
 #define H(X, Y, Z) X ^ Y ^ Z
-#define I(X, Y, Z) Y ^ (X & ~Z)
+#define I(X, Y, Z) Y ^ (X | (~Z))
 
 /* and some rather fiddly operations */
-#define BRACKET_1(A, B, C, D, K, S, STI) macro_temp = (A + F(B, C, D) + buf[K] + s_t[STI-1]); \
-  A = B + LCROT(macro_temp, S)
+#define BRACKET_1(A, B, C, D, K, S, STI) macro_temp = (A + (F(B, C, D)) + buf[K] + s_t[STI - 1]); \
+  A = B + (LCROT(macro_temp, S))
 
-#define BRACKET_2(A, B, C, D, K, S, STI) macro_temp = (A + G(B, C, D) + buf[K] + s_t[STI-1]); \
-  A = B + LCROT(macro_temp, S)
+#define BRACKET_2(A, B, C, D, K, S, STI) macro_temp = (A + (G(B, C, D)) + buf[K] + s_t[STI - 1]); \
+  A = B + (LCROT(macro_temp, S))
 
-#define BRACKET_3(A, B, C, D, K, S, STI) macro_temp = (A + H(B, C, D) + buf[K] + s_t[STI-1]); \
-  A = B + LCROT(macro_temp, S)
+#define BRACKET_3(A, B, C, D, K, S, STI) macro_temp = (A + (H(B, C, D)) + buf[K] + s_t[STI - 1]); \
+  A = B + (LCROT(macro_temp, S))
 
-#define BRACKET_4(A, B, C, D, K, S, STI) macro_temp = (A + I(B, C, D) + buf[K] + s_t[STI-1]); \
-  A = B + LCROT(macro_temp, S)
+#define BRACKET_4(A, B, C, D, K, S, STI) macro_temp = (A + (I(B, C, D)) + buf[K] + s_t[STI - 1]); \
+  A = B + (LCROT(macro_temp, S))
 
 /* and a sine table: */
 
@@ -70,11 +70,10 @@ uint s_t[64];
 
 void build_sin_table() {
   const unsigned long long factor = 4294967296;
-  
   uint i;
-  
-  for (i = 0; i < 64; i++) {
-    s_t[i] = (uint)(abs(sin((double)i)) * factor);
+
+  for (i = 1; i < 65; i++) {
+    s_t[i-1] = (uint)(fabs(sin((double)i)) * factor);
   }
 }
 
@@ -120,17 +119,6 @@ void c_md5(uchar* msg, long int initial_len, unsigned char* digest) {
   int_to_bytes((initial_len * CHAR_BIT) % 4294967296, tail + (tail_byte_len-8));
   int_to_bytes((initial_len * CHAR_BIT) / 4294967296, tail + (tail_byte_len-4));
   
-#ifdef DEBUG
-  printf("DEBUG: printing out the padded input as a hex stream:\n");
-  for (i = 0; i < initial_len; i++) {
-      printf("%02x", msg[i]);
-  }
-  for (i = 0; i < tail_byte_len; i++) {
-      printf("%02x", tail[i]);
-  }
-  printf("\n");
-#endif
-  
   /* initialise the hard-coded digest starting point: */
   digest[0]  = 0x01;
   digest[1]  = 0x23;
@@ -151,7 +139,15 @@ void c_md5(uchar* msg, long int initial_len, unsigned char* digest) {
   digest[13] = 0x54;
   digest[14] = 0x32;
   digest[15] = 0x10;
-  
+
+#ifdef DEBUG
+  printf("DEBUG: zeroth digest as hex stream:\n");
+  for (i = 0; i < 16; i++) {
+      printf("%02x", digest[i]);
+  }
+  printf("\n");
+#endif
+
   /* MD5 uses 32-bit integer arithmetic, although its inputs and outputs are
      8-bit bytes. The byte order is specified, but we convert from those bytes 
      to uints to actually perform the calculations. For this purpose:
@@ -206,6 +202,25 @@ void c_md5(uchar* msg, long int initial_len, unsigned char* digest) {
     cache[3] = D;
     
     BRACKET_1(A,B,C,D,  0,  7,  1);
+
+
+#ifdef DEBUG
+    
+  printf("DEBUG: after FIRST bracket, digest as hex stream:\n", round);
+    
+    
+    int_to_bytes(A, digest);
+    int_to_bytes(B, digest + 4);
+    int_to_bytes(C, digest + 8);
+    int_to_bytes(D, digest + 12);
+
+  
+  for (i = 0; i < 16; i++) {
+      printf("%02x", digest[i]);
+  }
+  printf("\n");
+#endif
+
     BRACKET_1(D,A,B,C,  1, 12,  2);
     BRACKET_1(C,D,A,B,  2, 17,  3);
     BRACKET_1(B,C,D,A,  3, 22,  4);
@@ -221,7 +236,20 @@ void c_md5(uchar* msg, long int initial_len, unsigned char* digest) {
     BRACKET_1(D,A,B,C, 13, 12, 14);
     BRACKET_1(C,D,A,B, 14, 17, 15);
     BRACKET_1(B,C,D,A, 15, 22, 16);
-    
+
+#ifdef DEBUG
+    int_to_bytes(A, digest);
+    int_to_bytes(B, digest + 4);
+    int_to_bytes(C, digest + 8);
+    int_to_bytes(D, digest + 12);
+
+  printf("DEBUG: after bracket 1s, digest as hex stream:\n", round);
+  for (i = 0; i < 16; i++) {
+      printf("%02x", digest[i]);
+  }
+  printf("\n");
+#endif
+
     BRACKET_2(A,B,C,D,  1,  5, 17);
     BRACKET_2(D,A,B,C,  6,  9, 18);
     BRACKET_2(C,D,A,B, 11, 14, 19);
@@ -238,7 +266,21 @@ void c_md5(uchar* msg, long int initial_len, unsigned char* digest) {
     BRACKET_2(D,A,B,C,  2,  9, 30);
     BRACKET_2(C,D,A,B,  7, 14, 31);
     BRACKET_2(B,C,D,A, 12, 20, 32);
-    
+
+#ifdef DEBUG
+    int_to_bytes(A, digest);
+    int_to_bytes(B, digest + 4);
+    int_to_bytes(C, digest + 8);
+    int_to_bytes(D, digest + 12);
+
+  printf("DEBUG: after bracket 2s, digest as hex stream:\n", round);
+  for (i = 0; i < 16; i++) {
+      printf("%02x", digest[i]);
+  }
+  printf("\n");
+#endif
+
+
     BRACKET_3(A,B,C,D,  5,  4, 33);
     BRACKET_3(D,A,B,C,  8, 11, 34);
     BRACKET_3(C,D,A,B, 11, 16, 35);
@@ -255,7 +297,20 @@ void c_md5(uchar* msg, long int initial_len, unsigned char* digest) {
     BRACKET_3(D,A,B,C, 12, 11, 46);
     BRACKET_3(C,D,A,B, 15, 16, 47);
     BRACKET_3(B,C,D,A,  2, 23, 48);
-    
+
+#ifdef DEBUG
+    int_to_bytes(A, digest);
+    int_to_bytes(B, digest + 4);
+    int_to_bytes(C, digest + 8);
+    int_to_bytes(D, digest + 12);
+
+  printf("DEBUG: after bracket 3s, digest as hex stream:\n", round);
+  for (i = 0; i < 16; i++) {
+      printf("%02x", digest[i]);
+  }
+  printf("\n");
+#endif
+
     BRACKET_4(A,B,C,D,  0,  6, 49);
     BRACKET_4(D,A,B,C,  7, 10, 50);
     BRACKET_4(C,D,A,B, 14, 15, 51);
@@ -273,13 +328,39 @@ void c_md5(uchar* msg, long int initial_len, unsigned char* digest) {
     BRACKET_4(C,D,A,B,  2, 15, 63);
     BRACKET_4(B,C,D,A,  9, 21, 64);
     
-    
+
+#ifdef DEBUG
+    int_to_bytes(A, digest);
+    int_to_bytes(B, digest + 4);
+    int_to_bytes(C, digest + 8);
+    int_to_bytes(D, digest + 12);
+
+  printf("DEBUG: after bracket 4s, digest as hex stream:\n", round);
+  for (i = 0; i < 16; i++) {
+      printf("%02x", digest[i]);
+  }
+  printf("\n");
+#endif
+
     /* finally, add the cached values back into the main variables: */
     A += cache[0];
     B += cache[1];
     C += cache[2];
     D += cache[3];
-    
+
+#ifdef DEBUG
+    int_to_bytes(A, digest);
+    int_to_bytes(B, digest + 4);
+    int_to_bytes(C, digest + 8);
+    int_to_bytes(D, digest + 12);
+
+  printf("DEBUG: %dth digest as hex stream:\n", round);
+  for (i = 0; i < 16; i++) {
+      printf("%02x", digest[i]);
+  }
+  printf("\n");
+#endif
+
   }
   
   /* copy the final values back into the byte array: */
