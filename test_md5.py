@@ -1,4 +1,4 @@
-import md5
+import home_crypto.md5 as md5
 
 import sys
 
