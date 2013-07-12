@@ -16,7 +16,7 @@ def reference_implementation(input):
     
     reference_md5(<unsigned char*>unpadded_input, ilen, result)
     
-    return ''.join(['%x' % result[i] for i in range(16)])
+    return ''.join(['%02x' % result[i] for i in range(16)])
 
 
 def md5(input):
@@ -29,5 +29,5 @@ def md5(input):
     
     c_md5(<unsigned char*>unpadded_input, ilen, result)
     
-    return ''.join(['%x' % result[i] for i in range(16)])
+    return ''.join(['%02x' % result[i] for i in range(16)])
     

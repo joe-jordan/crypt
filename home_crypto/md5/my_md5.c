@@ -25,6 +25,10 @@ THE SOFTWARE.
 
  */
 
+#ifdef DEBUG
+#include <stdio.h>
+#endif
+
 #include <stdlib.h>
 #include <limits.h>
 #include <math.h>
@@ -77,14 +81,14 @@ void build_sin_table() {
 /* we also use some helper functions to avoid assuming things about endien-ness: */
 uint bytes_to_int(uchar* bytes) {
   /* low order bytes are earlier in our input. */
-  return ((uint)bytes[0]) | ((uint)bytes[1] * 255) | ((uint)bytes[2] * 65536) | ((uint)bytes[3] * 16777216);
+  return ((uint)bytes[0]) | ((uint)bytes[1] * 256) | ((uint)bytes[2] * 65536) | ((uint)bytes[3] * 16777216);
 }
 
 void int_to_bytes(uint i, uchar* target) {
-  target[0] = i % 255;
-  target[1] = (i / 255) % 255;
-  target[2] = (i / 65536) % 255;
-  target[3] = (i / 16777216) % 255;
+  target[0] = i % 256;
+  target[1] = (i / 256) % 256;
+  target[2] = (i / 65536) % 256;
+  target[3] = (i / 16777216);
 }
 
 
@@ -100,11 +104,11 @@ void c_md5(uchar* msg, long int initial_len, unsigned char* digest) {
   
   /* 64 bits for the length, plus a 1 at the start = 65. */
   long int padded_bit_len = initial_len * CHAR_BIT + 65;
-  padded_bit_len += padded_bit_len / 512;
+  padded_bit_len += 512 - padded_bit_len % 512;
   uint tail_byte_len = padded_bit_len / CHAR_BIT - initial_len;
   
   /* allocate a new buffer*/
-  unsigned char* tail = (unsigned char*)malloc(sizeof(char) * tail_byte_len);
+  uchar* tail = (unsigned char*)malloc(sizeof(char) * tail_byte_len);
   
   int i;
   for (i = 0; i < tail_byte_len; i++) tail[i] = 0;
@@ -115,6 +119,17 @@ void c_md5(uchar* msg, long int initial_len, unsigned char* digest) {
   /* and the 64 bit length, where byte order is specified as smaller first: */
   int_to_bytes((initial_len * CHAR_BIT) % 4294967296, tail + (tail_byte_len-8));
   int_to_bytes((initial_len * CHAR_BIT) / 4294967296, tail + (tail_byte_len-4));
+  
+#ifdef DEBUG
+  printf("DEBUG: printing out the padded input as a hex stream:\n");
+  for (i = 0; i < initial_len; i++) {
+      printf("%02x", msg[i]);
+  }
+  for (i = 0; i < tail_byte_len; i++) {
+      printf("%02x", tail[i]);
+  }
+  printf("\n");
+#endif
   
   /* initialise the hard-coded digest starting point: */
   digest[0]  = 0x01;

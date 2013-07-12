@@ -89,6 +89,14 @@ void reference_md5(uint8_t *initial_msg, size_t initial_len, uint8_t *digest) {
     // initial_len>>29 == initial_len*8>>32, but avoids overflow.
     to_bytes(initial_len>>29, msg + new_len + 4);
  
+#ifdef DEBUG
+  printf("DEBUG: printing out the padded input as a hex stream:\n");
+  for (i = 0; i < new_len+8; i++) {
+      printf("%02x", msg[i]);
+  }
+  printf("\n");
+#endif
+ 
     // Process the message in successive 512-bit chunks:
     //for each 512-bit chunk of message:
     for(offset=0; offset<new_len; offset += (512/8)) {
